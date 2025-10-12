@@ -1,0 +1,65 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel NextStep
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+RWStructuredBuffer<int> State;
+RWStructuredBuffer<int> NextState;
+
+int WindowWidth;
+int WindowHeight;
+
+
+[numthreads(32,32,1)]
+void NextStep (uint3 id : SV_DispatchThreadID)
+{
+    int index = id.x + id.y * WindowWidth;
+    
+    // Calculate number of neighbors
+    int n = 0;
+    for (uint i = 0; i < 9; i++)
+    {
+        if (i == 4)
+        {
+            continue;
+        }
+
+        int neighbor_x = id.x + (i % 3 - 1);
+        int neighbor_y = id.y + (i / 3 - 1);
+
+
+        if (neighbor_x < 0 || neighbor_y < 0 || neighbor_x >= WindowWidth || neighbor_y >= WindowHeight)
+        {
+            continue;
+        }
+
+        if (State[neighbor_x + neighbor_y * WindowWidth])
+        {
+            n++;
+        }
+    }
+
+    // Apply rules
+    if (State[index] && (n < 2 || n > 3))
+    {
+        NextState[index] = 0;
+    } else if (!State[index] && n == 3)
+    {
+        NextState[index] = 1;
+    } else
+    {
+        NextState[index] = State[index];
+    }
+
+    float color;
+    if (NextState[index]){
+        color = 0;
+    } else {
+        color = 255;
+    }
+
+    Result[id.xy] = float4(color, color, color, 1.0); 
+
+}
