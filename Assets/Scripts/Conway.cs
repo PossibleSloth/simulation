@@ -41,7 +41,7 @@ public class Controller : MonoBehaviour
         Randomize();
     }
 
-        void OnDisable()
+    void OnDisable()
     {
         // Release the buffer when no longer needed
         if (StateBuffer != null)
