@@ -19,7 +19,6 @@ public class Controller : MonoBehaviour
     private Rect positionRect;
     private RenderTexture texture;
     public int[] grid;
-    public int[] nextGrid;
 
     private ComputeBuffer StateBuffer;
     private ComputeBuffer NextStateBuffer;
@@ -27,7 +26,6 @@ public class Controller : MonoBehaviour
     void Start()
     {
         grid = new int[WindowWidth * WindowHeight];
-        nextGrid = new int[WindowWidth * WindowHeight];
         positionRect = new(0, 0, WindowWidth, WindowHeight);
 
         texture = new(WindowWidth, WindowHeight, 0);
