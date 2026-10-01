@@ -1,9 +1,10 @@
 using System;
+using UnityEditor.PackageManager.UI;
 using UnityEngine;
 
 public class Wave1D : MonoBehaviour
 {
-    public enum StartingConditions { Random, HalfAndHalf, Line }
+    public enum StartingConditions { Random, HalfAndHalf, Line, Point, Sine }
     public StartingConditions startingConditions;
 
     public enum BoundaryConditions { Zero }
@@ -11,6 +12,8 @@ public class Wave1D : MonoBehaviour
 
     public int WindowWidth = 10;
     public int WindowHeight = 10;
+
+    public float MaxAmplitude = 1;
 
     public float C;
     private float C2; // precompute C squared
@@ -38,14 +41,23 @@ public class Wave1D : MonoBehaviour
 
         texture = new(WindowWidth, WindowHeight);
 
-        if (startingConditions == StartingConditions.Random) {
-            Randomize();
-        } else if (startingConditions == StartingConditions.HalfAndHalf)
+        switch (startingConditions)
         {
-            HalfAndHalf();
-        } else if (startingConditions == StartingConditions.Line)
-        {
-            Line();
+            case StartingConditions.Random:
+                Randomize();
+                break;
+            case StartingConditions.HalfAndHalf:
+                HalfAndHalf();
+                break;
+            case StartingConditions.Line:
+                Line();
+                break;
+            case StartingConditions.Point:
+                Point();
+                break;
+            case StartingConditions.Sine:
+                Sine();
+                break;
         }
 
         FirstStep();
@@ -57,7 +69,7 @@ public class Wave1D : MonoBehaviour
     {
         for (int x = 0; x < WindowWidth; x++)
         {
-            float value = UnityEngine.Random.value;
+            float value = UnityEngine.Random.value * MaxAmplitude;
             for (int y = 0; y < WindowHeight; y++)
             {
                 grid_1[x, y] = value;
@@ -69,11 +81,54 @@ public class Wave1D : MonoBehaviour
     {
         for (int x = 0; x < WindowWidth; x++)
         {
-            float value = x / (float)WindowWidth;
+            float value;
+            if (x > WindowWidth / 2)
+            {
+                value = (WindowWidth - x) / (float)WindowWidth * MaxAmplitude;
+            } else
+            {
+                value = x / (float)WindowWidth * MaxAmplitude;
+            }
             for (int y = 0; y < WindowHeight; y++)
             {
                 grid_1[x, y] = value;
             }
+        }
+    }
+
+    void Point()
+    {
+        for (int x = 0; x < WindowWidth; x++)
+        {
+            float value;
+            if (x == WindowWidth / 2)
+            {
+                value = MaxAmplitude;
+            } else
+            {
+                value = 0;
+            }
+            for (int y = 0; y < WindowHeight; y++)
+            {
+                grid_1[x, y] = value;
+            }
+        }
+    }
+
+    void Sine()
+    {
+        for (int x = 0; x < WindowWidth; x++)
+        {
+            float value;
+            if (x == 0 || x == WindowWidth - 1)
+                value = 0;
+            else
+                value = Mathf.Sin(Mathf.PI * x / (WindowWidth - 1)) * MaxAmplitude;
+            for (int y = 0; y < WindowHeight; y++)
+            {
+                grid_1[x, y] = value;
+            }
+            Debug.Log($"x={x}, value={value}");
         }
     }
 
@@ -83,7 +138,7 @@ public class Wave1D : MonoBehaviour
         {
             for (int y = 0; y < WindowHeight; y++)
             {
-                grid_1[x, y] = x > WindowWidth / 2 ? 1 : 0;
+                grid_1[x, y] = x > WindowWidth / 2 ? MaxAmplitude : 0;
             }
         }
     }
@@ -94,7 +149,14 @@ public class Wave1D : MonoBehaviour
         {
             for (int y = 0; y < WindowHeight; y++)
             {
-                Color pixelColor = new Color(grid[x, y], grid[x, y], grid[x, y]);
+                Color pixelColor;
+                if (grid[x, y] >= 0)
+                {
+                    pixelColor = new Color(0, 0, grid[x, y] / MaxAmplitude);
+                } else
+                {
+                    pixelColor = new Color(-grid[x, y] / MaxAmplitude, 0, 0);
+                }
                 texture.SetPixel(x, y, pixelColor);
             }
         }
@@ -148,7 +210,7 @@ public class Wave1D : MonoBehaviour
                 }
             } else
             {
-                // u[i] = 2u_1[i] - u_2[i] - C**2(u_1[i+1] - 2*u_1[i] + u_1[i-1])
+                // u[i] = 2u_1[i] - u_2[i] + C**2(u_1[i+1] - 2*u_1[i] + u_1[i-1])
                 xValue = 2 * grid_1[x, 0] - grid_2[x, 0] + C2 * (grid_1[x + 1, 0] - 2 * grid_1[x, 0] + grid_1[x - 1, 0]) ;
             }
 

@@ -148,12 +148,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2bda2202f81d4676ba8a11d7d2d80cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Wave
-  startingConditions: 0
+  startingConditions: 4
   boundaryConditions: 0
-  WindowWidth: 600
+  WindowWidth: 400
   WindowHeight: 100
-  C: 0.8
-  StartingRatio: 0.447
+  MaxAmplitude: 10
+  C: 1
+  StartingRatio: 0.374
 --- !u!4 &437685501
 Transform:
   m_ObjectHideFlags: 0
@@ -163,7 +164,7 @@ Transform:
   m_GameObject: {fileID: 437685499}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.83601, y: 1.02542, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -100,13 +100,13 @@ public class Controller : MonoBehaviour
     //     texture.Apply();
     // }
 
-    void OnGUI()
-    {
-        if (Event.current.type.Equals(EventType.Repaint))
-        {
-            Graphics.DrawTexture(positionRect, texture);
-        }
-    }
+    // void OnGUI()
+    // {
+    //     if (Event.current.type.Equals(EventType.Repaint))
+    //     {
+    //         Graphics.DrawTexture(positionRect, texture);
+    //     }
+    // }
 
     // void ApplyRules()
     // {
@@ -169,6 +169,7 @@ public class Controller : MonoBehaviour
         computeShader.Dispatch(kernelID, WindowWidth / 32, WindowHeight / 32, 1);
 
         NextStateBuffer.GetData(grid);
+        Graphics.DrawTexture(positionRect, texture);
         
     }
 }

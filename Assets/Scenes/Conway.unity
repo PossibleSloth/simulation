@@ -241,11 +241,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DrawTextureExample
   WindowWidth: 1280
-  WindowHeight: 640
+  WindowHeight: 1280
   StartingRatio: 0.447
   computeShader: {fileID: 7200000, guid: b2984fb5ef2254aae975f221d9789556, type: 3}
   grid: 
-  nextGrid: 
 --- !u!4 &832317875
 Transform:
   m_ObjectHideFlags: 0
