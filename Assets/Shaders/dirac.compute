@@ -1,0 +1,135 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Step
+#pragma kernel Render
+
+// Simulation buffers (ping-pong): float2 = (real, imaginary)
+RWTexture2D<float2> _FieldPrev;   // state at t - dt
+RWTexture2D<float2> _FieldCurr;   // state at t
+RWTexture2D<float2> _FieldNext;   // state at t + dt (write target)
+
+// Display buffer
+RWTexture2D<float4> _DisplayTex;
+
+int _Width;
+int _Height;
+float _DeltaTime;
+float _Time;
+float _WaveSpeed;      // c^2 term for the wave eq example
+
+float _px;
+float _py;
+float _m;
+
+
+// Returns (Re psi1, Im psi1, Re psi2, Im psi2) for the positive-energy
+// plane wave solution of the 2D Dirac equation at physical position (x,y)
+// and time t, for momentum (px,py) and rest mass m.
+float4 PlaneWaveSpinor(float x, float y, float t, float px, float py, float m)
+{
+    float pMag = sqrt(px * px + py * py);
+    float E = sqrt(m * m + pMag * pMag);
+    float theta = atan2(py, px);
+
+    // Amplitudes from the positive-energy eigenspinor u(p)
+    float u1 = sqrt(max(E + m, 0.0) / (2.0 * E));
+    float u2 = sqrt(max(E - m, 0.0) / (2.0 * E));
+
+    // Common plane-wave phase: (px*x + py*y - E*t)
+    float phase = px * x + py * y - E * t;
+
+    float cosPhase = cos(phase);
+    float sinPhase = sin(phase);
+
+    // psi1 = u1 * exp(i*phase)
+    float re1 = u1 * cosPhase;
+    float im1 = u1 * sinPhase;
+
+    // psi2 = u2 * exp(i*theta) * exp(i*phase) = u2 * exp(i*(phase+theta))
+    float cosPhase2 = cos(phase + theta);
+    float sinPhase2 = sin(phase + theta);
+    float re2 = u2 * cosPhase2;
+    float im2 = u2 * sinPhase2;
+
+    return float4(re1, im1, re2, im2);
+}
+
+[numthreads(8,8,1)]
+void Step (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Width || id.y >= (uint)_Height) return;
+
+    int2 p = int2(id.xy);
+
+    // Use formula to calculate some conditions
+    if (id.x < (uint)_Width / 2)
+    {
+        _FieldNext[p] = PlaneWaveSpinor(id.x, id.y, _Time, _px, _py, _m);
+        return;
+    }
+
+    // Neumann-ish boundary: clamp neighbor lookups to the texture edges
+    int2 pl = int2(max(p.x - 1, 0), p.y);
+    int2 pr = int2(min(p.x + 1, _Width  - 1), p.y);
+    int2 pd = int2(p.x, max(p.y - 1, 0));
+    int2 pu = int2(p.x, min(p.y + 1, _Height - 1));
+
+    float2 center = _FieldCurr[p];
+    float2 lap =  _FieldCurr[pl] + _FieldCurr[pr]
+                + _FieldCurr[pd] + _FieldCurr[pu]
+                - 4.0 * center;
+
+    // Discretized wave equation: d2f/dt2 = c^2 * laplacian(f)
+    // next = 2*curr - prev + dt^2 * c^2 * lap
+    float2 prev = _FieldPrev[p];
+    float2 next = 2.0 * center - prev + (_DeltaTime * _DeltaTime * _WaveSpeed) * lap;
+
+    _FieldNext[p] = next;
+}
+
+
+// [numthreads(8,8,1)]
+// void Step (uint3 id : SV_DispatchThreadID)
+// {
+//     if (id.x >= (uint)_Width || id.y >= (uint)_Height) return;
+    
+//     int2 p = int2(id.xy);
+
+// }
+
+
+[numthreads(8,8,1)]
+void Render (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_Width || id.y >= (uint)_Height) return;
+
+    int2 p = int2(id.xy);
+    float2 v = _FieldCurr[p];
+
+    float magnitude = length(v);           // |psi| analog / amplitude
+    float phase = atan2(v.y, v.x);         // useful once this is complex
+
+    // Simple amplitude -> intensity, phase -> hue (HSV->RGB)
+    float hue = (phase + 3.14159265) / (2.0 * 3.14159265);
+    float sat = 1.0;
+    float val = saturate(magnitude);
+
+    float3 rgb;
+    float hh = hue * 6.0;
+    int i = (int)hh;
+    float f = hh - i;
+    float pV = val * (1.0 - sat);
+    float qV = val * (1.0 - sat * f);
+    float tV = val * (1.0 - sat * (1.0 - f));
+
+    if (i == 0) rgb = float3(val, tV, pV);
+    else if (i == 1) rgb = float3(qV, val, pV);
+    else if (i == 2) rgb = float3(pV, val, tV);
+    else if (i == 3) rgb = float3(pV, qV, val);
+    else if (i == 4) rgb = float3(tV, pV, val);
+    else rgb = float3(val, pV, qV);
+
+    _DisplayTex[p] = float4(rgb, 1.0);
+}
+
+
+

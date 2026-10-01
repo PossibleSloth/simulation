@@ -19,7 +19,6 @@ public class Controller : MonoBehaviour
     private Rect positionRect;
     private RenderTexture texture;
     public int[] grid;
-    public int[] nextGrid;
 
     private ComputeBuffer StateBuffer;
     private ComputeBuffer NextStateBuffer;
@@ -27,7 +26,6 @@ public class Controller : MonoBehaviour
     void Start()
     {
         grid = new int[WindowWidth * WindowHeight];
-        nextGrid = new int[WindowWidth * WindowHeight];
         positionRect = new(0, 0, WindowWidth, WindowHeight);
 
         texture = new(WindowWidth, WindowHeight, 0);
@@ -41,7 +39,7 @@ public class Controller : MonoBehaviour
         Randomize();
     }
 
-        void OnDisable()
+    void OnDisable()
     {
         // Release the buffer when no longer needed
         if (StateBuffer != null)
@@ -102,13 +100,13 @@ public class Controller : MonoBehaviour
     //     texture.Apply();
     // }
 
-    void OnGUI()
-    {
-        if (Event.current.type.Equals(EventType.Repaint))
-        {
-            Graphics.DrawTexture(positionRect, texture);
-        }
-    }
+    // void OnGUI()
+    // {
+    //     if (Event.current.type.Equals(EventType.Repaint))
+    //     {
+    //         Graphics.DrawTexture(positionRect, texture);
+    //     }
+    // }
 
     // void ApplyRules()
     // {
@@ -171,6 +169,7 @@ public class Controller : MonoBehaviour
         computeShader.Dispatch(kernelID, WindowWidth / 32, WindowHeight / 32, 1);
 
         NextStateBuffer.GetData(grid);
+        Graphics.DrawTexture(positionRect, texture);
         
     }
 }
